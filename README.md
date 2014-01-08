@@ -13,7 +13,7 @@ Composer Example
         }
     ],
     "require": {
-        "devristo/phpws": "dev-master"
+        "stomp-ws-php": "dev-master"
     }
 }
 ```
