@@ -31,12 +31,12 @@ class StompWsTest extends StompWsTestCase
 
         $publisher = new \StompWs\StompWs($this->url, $this->origin);
         $publisher->connect();
-        $publisher->send($testMessage, $this->defaultDestination);
+        $publisher->send($this->defaultDestination, $testMessage);
         $publisher->disconnect();
 
-        $message = $subscriber->receive();
+        $message = $subscriber->readFrame();
         $subscriber->disconnect();
 
-        $this->assertContains($testMessage, $message);
+        $this->assertContains($testMessage, $message->body);
     }
 }

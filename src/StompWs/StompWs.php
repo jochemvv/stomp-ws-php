@@ -3,52 +3,74 @@
 namespace StompWs;
 
 use Wrench\Client;
+use FuseSource\Stomp\Stomp;
+use FuseSource\Stomp\Frame;
 
-class StompWs
+class StompWs extends Stomp
 {
     protected $webSocket;
 
     public function __construct($url, $origin)
     {
+        parent::__construct($url);
+
         $this->webSocket = new Client($url, $origin);
         $this->webSocket->addRequestHeader("Sec-WebSocket-Protocol", "v10.stomp, v11.stomp");
     }
 
-    public function connect()
+    protected function _makeConnection()
     {
         $this->webSocket->connect();
+    }
 
-        $this->webSocket->sendData("CONNECT\naccept-version:1.2\nhost:localhost\n\n\x00");
+    protected function _writeFrame(Frame $stompFrame)
+    {
+        if (!$this->webSocket->isConnected()) {
+            throw new StompException('Socket connection hasn\'t been established');
+        }
+
+        $data = $stompFrame->__toString();
+        $this->webSocket->sendData($data);
+    }
+
+    public function readFrame()
+    {
+        if (!$this->webSocket->isConnected()) {
+            throw new StompException('Socket connection hasn\'t been established');
+        }
+
         $data = $this->webSocket->receive();
-        $message = $data[0]->getPayload();
 
-        if (!(strpos($message, "CONNECTED") === 0)) {
-            throw new Exception("Unexpected response: \n".$message);
+        if (!is_string($data) && count($data) > 0) {
+
+            $message = reset($data)->getPayload();
+
+            list ($header, $body) = explode("\n\n", $message, 2);
+            $header = explode("\n", $header);
+            $headers = array();
+            $command = null;
+            foreach ($header as $v) {
+                if (isset($command)) {
+                    list ($name, $value) = explode(':', $v, 2);
+                    $headers[$name] = $value;
+                } else {
+                    $command = $v;
+                }
+            }
+            $frame = new Frame($command, $headers, trim($body));
+            if (isset($frame->headers['transformation']) && $frame->headers['transformation'] == 'jms-map-json') {
+                return new Map($frame);
+            } else {
+                return $frame;
+            }
+        } else {
+            return false;
         }
     }
 
     public function disconnect()
     {
+        parent::disconnect();
         $this->webSocket->disconnect();
-    }
-
-    public function subscribe($destination)
-    {
-        $this->webSocket->sendData("SUBSCRIBE\ndestination:".$destination."\nack:auto\n\n\x00");
-    }
-
-    public function send($message, $destination)
-    {
-        $this->webSocket->sendData("SEND\ndestination:".$destination."\n\n".$message."\n\x00");
-    }
-
-    public function receive()
-    {
-        $data = $this->webSocket->receive();
-        if (!is_string($data)) {
-            return $data[1]->getPayload();
-        } else {
-            return null;
-        }
     }
 }

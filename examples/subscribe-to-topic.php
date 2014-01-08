@@ -8,11 +8,11 @@ $subscriber->subscribe("/topic/test");
 
 $publisher = new \StompWs\StompWs("ws://localhost:61618/", "http://localhost");
 $publisher->connect();
-$publisher->send("test message", "/topic/test");
+$publisher->send("/topic/test", "test message");
 $publisher->disconnect();
 
-$message = $subscriber->receive();
+$message = $subscriber->readFrame();
 
-echo "received message:\n".$message;
+echo "received message:\n".$message->body;
 
 $subscriber->disconnect();
