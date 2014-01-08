@@ -5,6 +5,7 @@ namespace StompWs;
 use Wrench\Client;
 use FuseSource\Stomp\Stomp;
 use FuseSource\Stomp\Frame;
+use FuseSource\Stomp\Message\Map;
 
 class StompWs extends Stomp
 {
@@ -72,5 +73,20 @@ class StompWs extends Stomp
     {
         parent::disconnect();
         $this->webSocket->disconnect();
+    }
+
+    public function isConnected ()
+    {
+        return !empty($this->_sessionId) && $this->webSocket->isConnected();
+    }
+
+    public function hasFrameToRead()
+    {
+        return false;
+    }
+
+    public function __destruct()
+    {
+        $this->disconnect();
     }
 }
