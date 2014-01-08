@@ -1,4 +1,5 @@
 {
+    "name": "stomp-ws-php",
     "require": {
         "wrench/wrench": "v2.0.1",
         "fusesource/stomp-php" : "2.0.*"
