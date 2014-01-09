@@ -36,6 +36,10 @@ class StompWs extends Stomp
 
     public function readFrame()
     {
+        if (!empty($this->_waitbuf)) {
+            return array_shift($this->_waitbuf);
+        }
+
         if (!$this->webSocket->isConnected()) {
             throw new StompException('Socket connection hasn\'t been established');
         }
@@ -43,7 +47,6 @@ class StompWs extends Stomp
         $data = $this->webSocket->receive();
 
         if (!is_string($data) && count($data) > 0) {
-
             $message = reset($data)->getPayload();
 
             list ($header, $body) = explode("\n\n", $message, 2);
